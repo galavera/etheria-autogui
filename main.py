@@ -7,11 +7,12 @@ import os
 import mss
 import win32api
 import win32con
+import ctypes
 
 # === CONFIGURATION ===
 WINDOW_TITLE = "Etheria:Restart"
 THRESHOLD = 0.8
-CHECK_INTERVAL = 10
+CHECK_INTERVAL = 5
 
 # === Utility: Load template images safely ===
 def load_template(path):
@@ -64,39 +65,50 @@ def screenshot_window(title):
 
 # Force click function
 def force_click(x, y):
+    # Get total virtual screen bounds
+    virtual_screen_left = ctypes.windll.user32.GetSystemMetrics(76)  # SM_XVIRTUALSCREEN
+    virtual_screen_top = ctypes.windll.user32.GetSystemMetrics(77)   # SM_YVIRTUALSCREEN
+    virtual_screen_width = ctypes.windll.user32.GetSystemMetrics(78)  # SM_CXVIRTUALSCREEN
+    virtual_screen_height = ctypes.windll.user32.GetSystemMetrics(79)  # SM_CYVIRTUALSCREEN
+
+    # Check bounds
+    if not (virtual_screen_left <= x <= virtual_screen_left + virtual_screen_width and
+            virtual_screen_top <= y <= virtual_screen_top + virtual_screen_height):
+        print(f"[ERROR] Click ({x}, {y}) is outside the virtual screen bounds")
+        return
+
     win32api.SetCursorPos((x, y))
-    time.sleep(0.1)
+    time.sleep(0.05)
     win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
     time.sleep(0.05)
     win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
 
-def locate_and_click(template_img, description, window_offset):
+def locate_and_click(template_img, description):
+    # Always refresh window position
+    rect = get_window_rect(WINDOW_TITLE)
+    if rect is None:
+        return False
+    x, y, w, h = rect
+
     screenshot_bgr, offset = screenshot_window(WINDOW_TITLE)
     if screenshot_bgr is None:
         return False
-
-    # Debug image saving
-    os.makedirs("debug", exist_ok=True)
-    cv2.imwrite(f"debug/debug_screenshot_{description}.png", screenshot_bgr)
-    cv2.imwrite(f"debug/debug_template_{description}.png", template_img)
 
     result = cv2.matchTemplate(screenshot_bgr, template_img, cv2.TM_CCOEFF_NORMED)
     _, max_val, _, max_loc = cv2.minMaxLoc(result)
 
     if max_val >= THRESHOLD:
-        h, w = template_img.shape[:2]
-        click_x = offset[0] + max_loc[0] + w // 2
-        click_y = offset[1] + max_loc[1] + h // 2
-
-		# 🧠 Reactivate game window
-        win = gw.getWindowsWithTitle(WINDOW_TITLE)[0]
-        if not win.isActive:
-            win.activate()
-            time.sleep(0.2)
+        h_temp, w_temp = template_img.shape[:2]
+        click_x = offset[0] + max_loc[0] + w_temp // 2
+        click_y = offset[1] + max_loc[1] + h_temp // 2
 
         print(f"[INFO] Clicking {description} at ({click_x}, {click_y}) [confidence={max_val:.2f}]")
-        pyautogui.moveTo(click_x, click_y)
+
+        # Ensure window is focused before clicking
+        win = gw.getWindowsWithTitle(WINDOW_TITLE)[0]
+        win.activate()
         time.sleep(0.1)
+
         force_click(click_x, click_y)
         return True
     else:
@@ -109,19 +121,21 @@ def main():
     try:
         while True:
             print("[INFO] Checking for 'Complete' button...")
-            found = locate_and_click(complete_img, "Complete", get_window_rect(WINDOW_TITLE))
+            found = locate_and_click(complete_img, "Complete")
 
             if found:
-                locate_and_click(play_again_img, "Play Again", get_window_rect(WINDOW_TITLE))
+                time.sleep(1.5)
+                locate_and_click(play_again_img, "Play Again")
             else:
                 print("[INFO] 'Complete' not found. Trying 'Challenge'...")
-                if locate_and_click(challenge_img, "Challenge", get_window_rect(WINDOW_TITLE)):
+                if locate_and_click(challenge_img, "Challenge"):
                     time.sleep(2)  # Wait for next UI screen to load
-                    locate_and_click(battle_img, "Battle", get_window_rect(WINDOW_TITLE))
+                    while not locate_and_click(battle_img, "Battle"):
+                        time.sleep(1)
 
                     print("[INFO] Waiting for post-battle screen...")
-                    while not locate_and_click(post_battle_img, "Post Battle", get_window_rect(WINDOW_TITLE)):
-                        time.sleep(3)
+                    while not locate_and_click(post_battle_img, "Post Battle"):
+                        time.sleep(5)
 
             time.sleep(CHECK_INTERVAL)
 
