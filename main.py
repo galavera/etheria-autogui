@@ -43,8 +43,8 @@ def get_window_rect(title):
         return None
     win = windows[0]
     screen_size = pyautogui.size()
-    print(f"[DEBUG] Screen size: {screen_size}")
-    print(f"[DEBUG] Window position: left={win.left}, top={win.top}, width={win.width}, height={win.height}")
+    #print(f"[DEBUG] Screen size: {screen_size}")
+    #print(f"[DEBUG] Window position: left={win.left}, top={win.top}, width={win.width}, height={win.height}")
     if not win.isActive:
         win.activate()
         time.sleep(0.5)
@@ -115,6 +115,27 @@ def locate_and_click(template_img, description):
         print(f"[INFO] {description} not found (confidence={max_val:.2f})")
         return False
 
+def locate_on_screen(template_img, description):
+    # Always refresh window position
+    rect = get_window_rect(WINDOW_TITLE)
+    if rect is None:
+        return False
+
+    screenshot_bgr, offset = screenshot_window(WINDOW_TITLE)
+    if screenshot_bgr is None:
+        return False
+
+    result = cv2.matchTemplate(screenshot_bgr, template_img, cv2.TM_CCOEFF_NORMED)
+    _, max_val, _, max_loc = cv2.minMaxLoc(result)
+
+    if max_val >= THRESHOLD:
+        print(f"[INFO] {description} detected on screen [confidence={max_val:.2f}]")
+        return True
+    else:
+        print(f"[INFO] {description} not found (confidence={max_val:.2f})")
+        return False
+
+
 # === Main Loop ===
 def main():
     print("[INFO] Autoclicker started. Press Ctrl+C to stop.")
@@ -124,8 +145,8 @@ def main():
             found = locate_and_click(complete_img, "Complete")
 
             if found:
-                time.sleep(1.5)
-                locate_and_click(play_again_img, "Play Again")
+                while not locate_and_click(play_again_img, "Play Again"):
+                    time.sleep(1)
             else:
                 print("[INFO] 'Complete' not found. Trying 'Challenge'...")
                 if locate_and_click(challenge_img, "Challenge"):
@@ -134,8 +155,20 @@ def main():
                         time.sleep(1)
 
                     print("[INFO] Waiting for post-battle screen...")
-                    while not locate_and_click(post_battle_img, "Post Battle"):
-                        time.sleep(5)
+                    while True:
+                        found_post = locate_on_screen(post_battle_img, "Post Battle")
+                        if found_post:
+                            print("[INFO] Post-battle detected, doing extra click to dismiss...")
+                            time.sleep(3.5)
+                            # Get game window center
+                            rect = get_window_rect(WINDOW_TITLE)
+                            if rect:
+                                center_x = rect[0] + rect[2] // 2
+                                center_y = rect[1] + rect[3] // 2
+                                force_click(center_x, center_y)
+                            break  # Done with post-battle screen
+                        else:
+                            time.sleep(3)
 
             time.sleep(CHECK_INTERVAL)
 
