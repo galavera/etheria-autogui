@@ -169,7 +169,7 @@ def main():
                                 force_click(center_x, center_y)
                             break  # Done with post-battle screen
                         else:
-                            time.sleep(3)
+                            time.sleep(5)
 
             time.sleep(CHECK_INTERVAL)
 
