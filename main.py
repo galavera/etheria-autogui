@@ -12,7 +12,7 @@ import ctypes
 # === CONFIGURATION ===
 WINDOW_TITLE = "Etheria:Restart"
 THRESHOLD = 0.8
-CHECK_INTERVAL = 5
+CHECK_INTERVAL = 6
 
 # === Utility: Load template images safely ===
 def load_template(path):
@@ -145,6 +145,7 @@ def main():
             found = locate_and_click(complete_img, "Complete")
 
             if found:
+                time.sleep(2)
                 while not locate_and_click(play_again_img, "Play Again"):
                     time.sleep(1)
             else:
