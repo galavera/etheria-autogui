@@ -4,6 +4,7 @@ import cv2
 import numpy as np
 import pyautogui
 import os
+from datetime import datetime
 import mss
 import win32api
 import win32con
@@ -12,6 +13,7 @@ import ctypes
 """
 Run this if you wish to only loop the background battles.
 It will automatically click 'Play Again' once the background battles are completed.
+It will also store a screenshot of the win/loss and items drops acquired in the screenshots folder.
 """
 
 # === CONFIGURATION ===
@@ -150,7 +152,21 @@ def main():
             found = locate_and_click(complete_img, "Complete")
 
             if found:
-                time.sleep(2)
+                time.sleep(3)
+                # Captures a screenshot of the post battle pop up that shows the win/loss and item drops
+                # Directory to store screenshots
+                screenshot_dir = "screenshots"
+                os.makedirs(screenshot_dir, exist_ok=True)
+
+				# Create filename using current date and time
+                timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+                screenshot_path = os.path.join(screenshot_dir, f"screenshot_{timestamp}.png")
+
+				# Take screenshot and save it
+                screenshot = pyautogui.screenshot()
+                screenshot.save(screenshot_path)
+
+                print(f"[INFO] Screenshot saved to {screenshot_path}")
                 while not locate_and_click(play_again_img, "Play Again"):
                     time.sleep(1)
             else:

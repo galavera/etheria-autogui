@@ -4,6 +4,7 @@ import cv2
 import numpy as np
 import pyautogui
 import os
+from datetime import datetime
 import mss
 import win32api
 import win32con
@@ -12,7 +13,7 @@ import ctypes
 # === CONFIGURATION ===
 WINDOW_TITLE = "Etheria:Restart"
 THRESHOLD = 0.8
-CHECK_INTERVAL = 6
+CHECK_INTERVAL = 5
 
 # === Utility: Load template images safely ===
 def load_template(path):
@@ -146,6 +147,21 @@ def main():
 
             if found:
                 time.sleep(2)
+                # Captures a screenshot of the post battle pop up that shows the win/loss and item drops
+                # Directory to store screenshots
+                screenshot_dir = "screenshots"
+                os.makedirs(screenshot_dir, exist_ok=True)
+
+				# Create filename using current date and time
+                timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+                screenshot_path = os.path.join(screenshot_dir, f"screenshot_{timestamp}.png")
+
+				# Take screenshot and save it
+                screenshot = pyautogui.screenshot()
+                screenshot.save(screenshot_path)
+
+                print(f"[INFO] Screenshot saved to {screenshot_path}")
+
                 while not locate_and_click(play_again_img, "Play Again"):
                     time.sleep(1)
             else:

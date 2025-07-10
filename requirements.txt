@@ -3,3 +3,4 @@ opencv-python
 pygetwindow
 pillow
 pywin32
+mss
