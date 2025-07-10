@@ -9,6 +9,11 @@ import win32api
 import win32con
 import ctypes
 
+"""
+Run this if you wish to only loop the background battles.
+It will automatically click 'Play Again' once the background battles are completed.
+"""
+
 # === CONFIGURATION ===
 WINDOW_TITLE = "Etheria:Restart"
 THRESHOLD = 0.8
