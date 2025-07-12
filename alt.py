@@ -8,7 +8,9 @@ from datetime import datetime
 import mss
 import win32api
 import win32con
+import win32gui
 import ctypes
+import threading
 
 """
 Run this if you wish to only loop the background battles.
@@ -43,18 +45,19 @@ except Exception as e:
     print(e)
     exit(1)
 
+def bring_window_to_front_no_activate(hwnd):
+    # SWP_NOACTIVATE = 0x0010
+    win32gui.SetWindowPos(hwnd, win32con.HWND_TOPMOST, 0, 0, 0, 0,
+                          win32con.SWP_NOMOVE | win32con.SWP_NOSIZE | win32con.SWP_NOACTIVATE)
+    win32gui.SetWindowPos(hwnd, win32con.HWND_NOTOPMOST, 0, 0, 0, 0,
+                          win32con.SWP_NOMOVE | win32con.SWP_NOSIZE | win32con.SWP_NOACTIVATE)
+
 def get_window_rect(title):
     windows = gw.getWindowsWithTitle(title)
     if not windows:
         print(f"[ERROR] No window found with title: {title}")
         return None
     win = windows[0]
-    screen_size = pyautogui.size()
-    #print(f"[DEBUG] Screen size: {screen_size}")
-    #print(f"[DEBUG] Window position: left={win.left}, top={win.top}, width={win.width}, height={win.height}")
-    if not win.isActive:
-        win.activate()
-        time.sleep(0.5)
     return (win.left, win.top, win.width, win.height)
 
 def screenshot_window(title):
@@ -110,12 +113,8 @@ def locate_and_click(template_img, description):
         click_y = offset[1] + max_loc[1] + h_temp // 2
 
         print(f"[INFO] Clicking {description} at ({click_x}, {click_y}) [confidence={max_val:.2f}]")
-
-        # Ensure window is focused before clicking
-        win = gw.getWindowsWithTitle(WINDOW_TITLE)[0]
-        win.activate()
-        time.sleep(0.1)
-
+        hwnd = gw.getWindowsWithTitle(WINDOW_TITLE)[0]._hWnd
+        bring_window_to_front_no_activate(hwnd)
         force_click(click_x, click_y)
         return True
     else:
@@ -144,7 +143,8 @@ def locate_on_screen(template_img, description):
 
 
 # === Main Loop ===
-def main():
+
+def automation_loop():
     print("[INFO] Autoclicker started. Press Ctrl+C to stop.")
     try:
         while True:
@@ -153,20 +153,17 @@ def main():
 
             if found:
                 time.sleep(3)
-                # Captures a screenshot of the post battle pop up that shows the win/loss and item drops
-                # Directory to store screenshots
+
                 screenshot_dir = "screenshots"
                 os.makedirs(screenshot_dir, exist_ok=True)
-
-				# Create filename using current date and time
                 timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
                 screenshot_path = os.path.join(screenshot_dir, f"screenshot_{timestamp}.png")
 
-				# Take screenshot and save it
                 screenshot = pyautogui.screenshot()
                 screenshot.save(screenshot_path)
 
                 print(f"[INFO] Screenshot saved to {screenshot_path}")
+
                 while not locate_and_click(play_again_img, "Play Again"):
                     time.sleep(1)
             else:
@@ -175,7 +172,19 @@ def main():
             time.sleep(CHECK_INTERVAL)
 
     except KeyboardInterrupt:
-        print("\n[INFO] Script stopped by user.")
+        print("\n[INFO] Automation thread stopped by user.")
 
 if __name__ == "__main__":
-    main()
+    automation_thread = threading.Thread(target=automation_loop, daemon=True)
+    automation_thread.start()
+
+    try:
+        while True:
+            # You can perform other tasks here while automation runs
+            # For example, wait for user input
+            command = input("[MAIN THREAD] Type 'exit' to stop:\n")
+            if command.strip().lower() == "exit":
+                print("[MAIN THREAD] Exiting program...")
+                break
+    except KeyboardInterrupt:
+        print("[MAIN THREAD] Stopped by user.")
