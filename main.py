@@ -13,7 +13,7 @@ import ctypes
 # === CONFIGURATION ===
 WINDOW_TITLE = "Etheria:Restart"
 THRESHOLD = 0.8
-CHECK_INTERVAL = 5
+CHECK_INTERVAL = 3
 
 # === Utility: Load template images safely ===
 def load_template(path):
@@ -33,6 +33,7 @@ try:
     play_again_img = load_template("assets/play-again.png")
     battle_img = load_template("assets/battle.png")
     post_battle_img = load_template("assets/post-battle.png")
+    elimination_img = load_template("assets/fail.png")
 except Exception as e:
     print(e)
     exit(1)
@@ -113,7 +114,7 @@ def locate_and_click(template_img, description):
         force_click(click_x, click_y)
         return True
     else:
-        print(f"[INFO] {description} not found (confidence={max_val:.2f})")
+        #print(f"[INFO] {description} not found (confidence={max_val:.2f})")
         return False
 
 def locate_on_screen(template_img, description):
@@ -133,8 +134,26 @@ def locate_on_screen(template_img, description):
         print(f"[INFO] {description} detected on screen [confidence={max_val:.2f}]")
         return True
     else:
-        print(f"[INFO] {description} not found (confidence={max_val:.2f})")
+        #print(f"[INFO] {description} not found (confidence={max_val:.2f})")
         return False
+
+def summarize_log():
+    win_count = 0
+    loss_count = 0
+
+    try:
+        with open("screenshots/log.txt", "r") as file:
+            for line in file:
+                if line.strip().upper() == "WIN":
+                    win_count += 1
+                elif line.strip().upper() == "LOSS":
+                    loss_count += 1
+    except FileNotFoundError:
+        print("Log file not found.")
+        return
+
+    print(f"Win: {win_count}")
+    print(f"Loss: {loss_count}")
 
 
 # === Main Loop ===
@@ -165,6 +184,7 @@ def main():
                 while not locate_and_click(play_again_img, "Play Again"):
                     time.sleep(1)
             else:
+                summarize_log()
                 print("[INFO] 'Complete' not found. Trying 'Challenge'...")
                 if locate_and_click(challenge_img, "Challenge"):
                     time.sleep(2)  # Wait for next UI screen to load
@@ -174,9 +194,13 @@ def main():
                     print("[INFO] Waiting for post-battle screen...")
                     while True:
                         found_post = locate_on_screen(post_battle_img, "Post Battle")
+                        found_elimination = locate_on_screen(elimination_img, "Failed")
                         if found_post:
                             print("[INFO] Post-battle detected, doing extra click to dismiss...")
-                            time.sleep(3.5)
+                            # Log Win/Loss in txt file
+                            with open("screenshots/log.txt", "a") as file:
+                                file.write("WIN\n")
+                            time.sleep(3)
                             # Get game window center
                             rect = get_window_rect(WINDOW_TITLE)
                             if rect:
@@ -184,13 +208,26 @@ def main():
                                 center_y = rect[1] + rect[3] // 2
                                 force_click(center_x, center_y)
                             break  # Done with post-battle screen
+                        if found_elimination:
+                            print("Run failed.")
+                            with open("screenshots/log.txt", "a") as file:
+                                file.write("LOSS\n")
+                            time.sleep(3)
+                            rect = get_window_rect(WINDOW_TITLE)
+                            if rect:
+                                center_x = rect[0] + rect[2] // 2
+                                center_y = rect[1] + rect[3] // 2
+                                force_click(center_x, center_y)
+                            break  # Done with failure screen
                         else:
                             time.sleep(5)
+                            #print("[INFO] Battle still in process...")
 
             time.sleep(CHECK_INTERVAL)
 
     except KeyboardInterrupt:
         print("\n[INFO] Script stopped by user.")
+
 
 if __name__ == "__main__":
     main()
