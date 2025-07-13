@@ -36,28 +36,17 @@ You can install all dependencies using:
 pip install -r requirements.txt
 ```
 
-Your `requirements.txt` should look like:
-
-```txt
-pyautogui
-pygetwindow
-opencv-python
-numpy
-mss
-pywin32
-```
-
 ---
 
 ## ⚠️ Important Notes
 
-- 🧠 **Run as Administrator**  
+- 🧠 **Run as Administrator**
   The script needs elevated permissions to move the mouse and click on game windows. **Right-click your terminal or IDE and choose "Run as administrator."**
 
-- 🖥️ **Game Must Be Fullscreen**  
+- 🖥️ **Game Must Be Fullscreen**
   The script relies on image matching. Fullscreen ensures consistent visuals.
 
-- 📌 **Image Assets Required**  
+- 📌 **Image Assets Required**
   Make sure the following image files exist in a folder named `assets/`:
   ```
   assets/
@@ -66,10 +55,10 @@ pywin32
     ├── play-again.png
     ├── battle.png
     ├── post-battle.png
-    └── fail.png          # Only used in main.py
+    └── fail.png
   ```
 
-- 📷 **Screenshots Folder**  
+- 📷 **Screenshots Folder**
   Screenshots will be saved to `screenshots/`, and a log file (`log.txt`) will track wins/losses when using `main.py`.
 
 ---
@@ -79,11 +68,11 @@ pywin32
 1. Open terminal or your IDE **with administrator rights**.
 2. Ensure the game is **running in fullscreen mode**.
 3. Choose a script based on your use case:
-   - Background-only battles:  
+   - Background-only battles:
      ```bash
      python alt.py
      ```
-   - Full loop (bg + fg battles):  
+   - Full loop (bg + fg battles):
      ```bash
      python main.py
      ```
