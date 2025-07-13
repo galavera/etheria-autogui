@@ -13,7 +13,7 @@ import ctypes
 # === CONFIGURATION ===
 WINDOW_TITLE = "Etheria:Restart"
 THRESHOLD = 0.8
-CHECK_INTERVAL = 3
+CHECK_INTERVAL = 4
 
 
 # === Utility: Load template images safely ===
