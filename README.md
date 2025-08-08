@@ -7,8 +7,7 @@ This is a Python-based automation tool for the game **Etheria:Restart**. It auto
 ### `main.py`
 - Loops **both background and foreground battles**.
 - Logs battle results (`WIN`/`LOSS`) to `screenshots/log.txt`.
-- Saves battle result screenshots in the `screenshots/` folder.
-- Handles additional clicks for post-battle screens.
+- Saves background battle result screenshots in the `screenshots/` folder.
 
 ### `alt.py`
 - Focuses **only on background battles**.
@@ -19,7 +18,9 @@ This is a Python-based automation tool for the game **Etheria:Restart**. It auto
 
 ## ⚙️ Requirements
 
-Ensure you're using **Python 3.8+** and have the following packages installed:
+After downloading the project you can simply open the `run.bat` to automatically create a virtual environment and download the dependencies. It will also ask which script you would like to run `main.py` or `alt.py`
+
+If you prefer installing everything yourself, ensure you're using **Python 3.8+** and have the following packages installed:
 
 ```
 pyautogui
