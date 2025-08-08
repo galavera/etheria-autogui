@@ -1,1 +1,5 @@
-screenshots/*
+/screenshots
+.venv
+.vscode
+log.txt
+/screenshots/log.txt
