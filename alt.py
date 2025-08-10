@@ -23,6 +23,7 @@ WINDOW_TITLE = "Etheria:Restart"
 THRESHOLD = 0.8
 CHECK_INTERVAL = 30
 
+
 # === Utility: Load template images safely ===
 def load_template(path):
     if not os.path.exists(path):
@@ -31,8 +32,11 @@ def load_template(path):
     if img is None:
         raise ValueError(f"[ERROR] Failed to load image: {path}")
     if img.shape[2] == 4:
-        img = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)  # Convert from BGRA to BGR if needed
+        img = cv2.cvtColor(
+            img, cv2.COLOR_BGRA2BGR
+        )  # Convert from BGRA to BGR if needed
     return img
+
 
 # === Load reference images from /assets ===
 try:
@@ -41,16 +45,33 @@ try:
     play_again_img = load_template("assets/play-again.png")
     battle_img = load_template("assets/battle.png")
     post_battle_img = load_template("assets/post-battle.png")
+    limit_img = load_template("assets/limit.png")
 except Exception as e:
     print(e)
     exit(1)
 
+
 def bring_window_to_front_no_activate(hwnd):
     # SWP_NOACTIVATE = 0x0010
-    win32gui.SetWindowPos(hwnd, win32con.HWND_TOPMOST, 0, 0, 0, 0,
-                          win32con.SWP_NOMOVE | win32con.SWP_NOSIZE | win32con.SWP_NOACTIVATE)
-    win32gui.SetWindowPos(hwnd, win32con.HWND_NOTOPMOST, 0, 0, 0, 0,
-                          win32con.SWP_NOMOVE | win32con.SWP_NOSIZE | win32con.SWP_NOACTIVATE)
+    win32gui.SetWindowPos(
+        hwnd,
+        win32con.HWND_TOPMOST,
+        0,
+        0,
+        0,
+        0,
+        win32con.SWP_NOMOVE | win32con.SWP_NOSIZE | win32con.SWP_NOACTIVATE,
+    )
+    win32gui.SetWindowPos(
+        hwnd,
+        win32con.HWND_NOTOPMOST,
+        0,
+        0,
+        0,
+        0,
+        win32con.SWP_NOMOVE | win32con.SWP_NOSIZE | win32con.SWP_NOACTIVATE,
+    )
+
 
 def get_window_rect(title):
     windows = gw.getWindowsWithTitle(title)
@@ -59,6 +80,7 @@ def get_window_rect(title):
         return None
     win = windows[0]
     return (win.left, win.top, win.width, win.height)
+
 
 def screenshot_window(title):
     rect = get_window_rect(title)
@@ -73,17 +95,24 @@ def screenshot_window(title):
             return img, (x, y)
     return None, (0, 0)
 
+
 # Force click function
 def force_click(x, y):
     # Get total virtual screen bounds
     virtual_screen_left = ctypes.windll.user32.GetSystemMetrics(76)  # SM_XVIRTUALSCREEN
-    virtual_screen_top = ctypes.windll.user32.GetSystemMetrics(77)   # SM_YVIRTUALSCREEN
-    virtual_screen_width = ctypes.windll.user32.GetSystemMetrics(78)  # SM_CXVIRTUALSCREEN
-    virtual_screen_height = ctypes.windll.user32.GetSystemMetrics(79)  # SM_CYVIRTUALSCREEN
+    virtual_screen_top = ctypes.windll.user32.GetSystemMetrics(77)  # SM_YVIRTUALSCREEN
+    virtual_screen_width = ctypes.windll.user32.GetSystemMetrics(
+        78
+    )  # SM_CXVIRTUALSCREEN
+    virtual_screen_height = ctypes.windll.user32.GetSystemMetrics(
+        79
+    )  # SM_CYVIRTUALSCREEN
 
     # Check bounds
-    if not (virtual_screen_left <= x <= virtual_screen_left + virtual_screen_width and
-            virtual_screen_top <= y <= virtual_screen_top + virtual_screen_height):
+    if not (
+        virtual_screen_left <= x <= virtual_screen_left + virtual_screen_width
+        and virtual_screen_top <= y <= virtual_screen_top + virtual_screen_height
+    ):
         print(f"[ERROR] Click ({x}, {y}) is outside the virtual screen bounds")
         return
 
@@ -92,6 +121,7 @@ def force_click(x, y):
     win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
     time.sleep(0.05)
     win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
+
 
 def locate_and_click(template_img, description):
     # Always refresh window position
@@ -112,7 +142,9 @@ def locate_and_click(template_img, description):
         click_x = offset[0] + max_loc[0] + w_temp // 2
         click_y = offset[1] + max_loc[1] + h_temp // 2
 
-        print(f"[INFO] Clicking {description} at ({click_x}, {click_y}) [confidence={max_val:.2f}]")
+        print(
+            f"[INFO] Clicking {description} at ({click_x}, {click_y}) [confidence={max_val:.2f}]"
+        )
         hwnd = gw.getWindowsWithTitle(WINDOW_TITLE)[0]._hWnd
         bring_window_to_front_no_activate(hwnd)
         force_click(click_x, click_y)
@@ -120,6 +152,7 @@ def locate_and_click(template_img, description):
     else:
         print(f"[INFO] {description} not found (confidence={max_val:.2f})")
         return False
+
 
 def locate_on_screen(template_img, description):
     # Always refresh window position
@@ -144,12 +177,14 @@ def locate_on_screen(template_img, description):
 
 # === Main Loop ===
 
+
 def automation_loop():
     print("[INFO] Autoclicker started. Press Ctrl+C to stop.")
     try:
         while True:
             print("[INFO] Checking for 'Complete' button...")
             found = locate_and_click(complete_img, "Complete")
+            module_limit = locate_and_click(limit_img, "Limit")
 
             if found:
                 time.sleep(3)
@@ -157,7 +192,9 @@ def automation_loop():
                 screenshot_dir = "screenshots"
                 os.makedirs(screenshot_dir, exist_ok=True)
                 timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-                screenshot_path = os.path.join(screenshot_dir, f"screenshot_{timestamp}.png")
+                screenshot_path = os.path.join(
+                    screenshot_dir, f"screenshot_{timestamp}.png"
+                )
 
                 screenshot = pyautogui.screenshot()
                 screenshot.save(screenshot_path)
@@ -166,6 +203,9 @@ def automation_loop():
 
                 while not locate_and_click(play_again_img, "Play Again"):
                     time.sleep(1)
+            elif module_limit:
+                print("[INFO] Module limit reached. Sending ESC key to close alert...")
+                time.sleep(1)
             else:
                 print("[INFO] 'Complete' not found...")
 
@@ -173,6 +213,7 @@ def automation_loop():
 
     except KeyboardInterrupt:
         print("\n[INFO] Automation thread stopped by user.")
+
 
 if __name__ == "__main__":
     automation_thread = threading.Thread(target=automation_loop, daemon=True)
