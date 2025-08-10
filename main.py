@@ -36,6 +36,7 @@ try:
     battle_img = load_template("assets/battle.png")
     post_battle_img = load_template("assets/post-battle.png")
     elimination_img = load_template("assets/fail.png")
+    limit_img = load_template("assets/limit.png")
 except Exception as e:
     print(e)
     exit(1)
@@ -158,6 +159,7 @@ def main():
             print("[INFO] Checking for Background Battles...")
             found = locate_and_click(complete_img, "Complete")
             next_battle = locate_and_click(challenge_img, "Challenge")
+            module_limit = locate_and_click(limit_img, "Limit")
 
             if found:
                 time.sleep(2)
@@ -173,6 +175,9 @@ def main():
 
                 while not locate_and_click(play_again_img, "Play Again"):
                     time.sleep(1)
+            elif module_limit:
+                print("[INFO] Module limit reached. Sending ESC key to close alert...")
+                time.sleep(1)
 
             elif next_battle:
                 time.sleep(2)
